@@ -1,0 +1,6 @@
+{
+    "GOOGLE_CREDENTIALS_FILE": "g_credentials.json",
+    "SPREADSHEET_ID": "id",
+    "WORKSHEET_NAME": "TCS",
+    "INVEST_TOKEN": "token"
+}
