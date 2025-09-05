@@ -1,21 +1,22 @@
 from gspread import Worksheet
 from tcs import Portfolio
 
+
 def update_portfolio_ws(worksheet: Worksheet, portfolio: Portfolio):
-    values = [
-            [
-                "Account ID",
-                "Account Name",
-                "Type",
-                "UID",
-                "Ticker",
-                "Name",
-                "Country",
-                "Value",
-                "Price",
-                "Total Price",
-            ]
+    values: list[list[str | float]] = [
+        [
+            "Account ID",
+            "Account Name",
+            "Type",
+            "UID",
+            "Ticker",
+            "Name",
+            "Country",
+            "Value",
+            "Price",
+            "Total Price",
         ]
+    ]
     for asset in portfolio.assets:
         values.append(
             [
