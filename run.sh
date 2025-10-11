@@ -1,21 +1,33 @@
 #!/bin/bash
 
 # Скрипт для запуска main.py под виртуальным окружением
-# с дополнительными проверками и логированием
+# с записью в системный лог
 
-set -e  # Завершать скрипт при первой ошибке
+set -e
 
-# Цвета для вывода
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Имя для лога (будет отображаться в syslog)
+SCRIPT_NAME="tcs_invest_runner"
 
-# Функции для цветного вывода
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
-success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-info() { echo -e "[INFO] $1"; }
+# Функции для записи в системный лог
+log_info() { 
+    logger -t "$SCRIPT_NAME" -p user.info "[INFO] $1"
+    echo "[INFO] $1"  # Дублируем в консоль для удобства
+}
+
+log_success() { 
+    logger -t "$SCRIPT_NAME" -p user.info "[SUCCESS] $1"
+    echo "[SUCCESS] $1"
+}
+
+log_warning() { 
+    logger -t "$SCRIPT_NAME" -p user.warn "[WARNING] $1"
+    echo "[WARNING] $1"
+}
+
+log_error() { 
+    logger -t "$SCRIPT_NAME" -p user.err "[ERROR] $1"
+    echo "[ERROR] $1" >&2
+}
 
 # Пути
 VENV_DIR=".venv"
@@ -24,89 +36,80 @@ REQUIREMENTS_FILE="requirements.txt"
 
 # Проверка зависимостей
 check_dependencies() {
-    info "Проверка зависимостей..."
+    log_info "Проверка зависимостей..."
     
     if [ ! -d "$VENV_DIR" ]; then
-        error "Виртуальное окружение $VENV_DIR не найдено!"
-        info "Создайте его командой: python3 -m venv $VENV_DIR"
+        log_error "Виртуальное окружение $VENV_DIR не найдено"
         exit 1
     fi
     
     if [ ! -f "$PYTHON_SCRIPT" ]; then
-        error "Файл $PYTHON_SCRIPT не найден!"
+        log_error "Файл $PYTHON_SCRIPT не найден"
         exit 1
     fi
     
-    # Проверяем, установлен ли Python в виртуальном окружении
     if [ ! -f "$VENV_DIR/bin/python" ]; then
-        error "Python не найден в виртуальном окружении!"
+        log_error "Python не найден в виртуальном окружении"
         exit 1
     fi
 }
 
-# Проверка и установка зависимостей из requirements.txt
+# Установка зависимостей
 install_requirements() {
     if [ -f "$REQUIREMENTS_FILE" ]; then
-        info "Обнаружен $REQUIREMENTS_FILE, проверяем зависимости..."
+        log_info "Обнаружен $REQUIREMENTS_FILE, проверяем зависимости..."
         source "$VENV_DIR/bin/activate"
         
-        # Проверяем, установлены ли все зависимости
-        if ! pip install -r "$REQUIREMENTS_FILE" --quiet; then
-            error "Ошибка при установке зависимостей из $REQUIREMENTS_FILE"
+        if pip install -r "$REQUIREMENTS_FILE" --quiet; then
+            log_success "Зависимости установлены"
+        else
+            log_error "Ошибка при установке зависимостей"
             exit 1
         fi
         
         deactivate
-        success "Зависимости проверены и установлены"
     else
-        warning "Файл $REQUIREMENTS_FILE не найден, пропускаем установку зависимостей"
+        log_warning "Файл $REQUIREMENTS_FILE не найден"
     fi
 }
 
-# Основная функция запуска
+# Запуск Python-скрипта
 run_script() {
-    info "Запуск $PYTHON_SCRIPT под виртуальным окружением..."
+    log_info "Запуск $PYTHON_SCRIPT под виртуальным окружением"
     
-    # Активируем виртуальное окружение
     source "$VENV_DIR/bin/activate"
     
-    # Получаем версию Python для информации
     PYTHON_VERSION=$(python --version 2>&1)
-    info "Используется: $PYTHON_VERSION"
+    log_info "Используется: $PYTHON_VERSION"
     
-    # Запускаем Python-скрипт
-    info "Выполняется: python $PYTHON_SCРИPT $@"
-    python "$PYTHON_SCRIPT" "$@"
+    log_info "Выполняется: python $PYTHON_SCRIPT $@"
     
-    # Сохраняем код возврата
-    EXIT_CODE=$?
+    # Запускаем Python-скрипт и логируем результат
+    if python "$PYTHON_SCRIPT" "$@"; then
+        log_success "Python-скрипт выполнен успешно"
+        EXIT_CODE=0
+    else
+        EXIT_CODE=$?
+        log_error "Python-скрипт завершился с ошибкой (код: $EXIT_CODE)"
+    fi
     
-    # Деактивация
     deactivate
-    
     return $EXIT_CODE
 }
 
 # Главная функция
 main() {
-    info "=== Запуск Python-скрипта под виртуальным окружением ==="
+    log_info "=== Запуск Python-скрипта под виртуальным окружением ==="
     
     check_dependencies
     install_requirements
-    
-    # Запускаем скрипт, передавая все аргументы
     run_script "$@"
     
     EXIT_CODE=$?
-    
-    if [ $EXIT_CODE -eq 0 ]; then
-        success "Скрипт $PYTHON_SCRIPT завершился успешно"
-    else
-        error "Скрипт $PYTHON_SCRIPT завершился с ошибкой (код: $EXIT_CODE)"
-    fi
+    log_info "Скрипт завершил работу с кодом: $EXIT_CODE"
     
     exit $EXIT_CODE
 }
 
-# Запуск главной функции с передачей всех аргументов
+# Запуск
 main "$@"
