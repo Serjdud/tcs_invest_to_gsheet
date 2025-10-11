@@ -7,6 +7,7 @@ google-auth-oauthlib==1.2.1
 grpcio==1.71.0
 gspread==6.2.0
 idna==3.10
+logging==0.4.9.6
 oauthlib==3.2.2
 packaging==24.2
 pip3-autoremove==1.2.2
@@ -17,6 +18,7 @@ python-dateutil==2.9.0.post0
 requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
+setuptools==80.9.0
 six==1.17.0
 tinkoff==0.1.1
 tinkoff-investments==0.2.0b110

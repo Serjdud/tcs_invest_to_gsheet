@@ -1,5 +1,8 @@
+import logging
+import sys
 from tinkoff.invest import AccountStatus, InstrumentIdType, RequestError
 from tinkoff.invest.services import Services
+from logger_setup import logger
 
 NANO = 10 ** (-9)
 ASSETS_INFO_CACHE = {"uid": {"ticker": "", "name": "", "country": ""}}
@@ -29,22 +32,18 @@ class Asset:
         self._get_asset_info(asset_uid, client)
 
     def _get_asset_info(self, asset_uid: str, client: Services):
-        if asset_uid in ASSETS_INFO_CACHE.keys():
-            self.ticker = ASSETS_INFO_CACHE[asset_uid]["ticker"]
-            self.name = ASSETS_INFO_CACHE[asset_uid]["name"]
-            self.country = ASSETS_INFO_CACHE[asset_uid]["country"]
-        else:
-            try:
+        try:
+            if asset_uid in ASSETS_INFO_CACHE.keys():
+                logger.debug(f"Using cache for instrument UID: {asset_uid}")
+                self.ticker = ASSETS_INFO_CACHE[asset_uid]["ticker"]
+                self.name = ASSETS_INFO_CACHE[asset_uid]["name"]
+                self.country = ASSETS_INFO_CACHE[asset_uid]["country"]
+            else:
+                logger.info(f"Requesting instrument info for UID: {asset_uid}")
                 info = client.instruments.get_instrument_by(
                     id_type=InstrumentIdType(3), id=asset_uid
                 ).instrument
-            except RequestError as er:
-                print("\nGet Portfolio Request error")
-                print("code:\n", er.code)
-                print("details:\n", er.details)
-                print("metadata:\n", er.metadata)
-                print()
-            else:
+
                 self.ticker = info.ticker
                 self.name = info.name
                 self.country = info.country_of_risk_name
@@ -53,36 +52,62 @@ class Asset:
                     "name": info.name,
                     "country": info.country_of_risk_name,
                 }
+                logger.debug(f"Instrument info received: {info.ticker} - {info.name}")
+
+        except RequestError as er:
+            logger.error(f"Error requesting instrument info for UID: {asset_uid}")
+            logger.error(f"Error code: {er.code}")
+            logger.error(f"Error details: {er.details}")
+        except Exception as e:
+            logger.error(f"Unexpected error getting instrument info: {e}")
 
 
 class Portfolio:
     def __init__(self, client: Services):
         self.client = client
+        logger.info("Initializing portfolio")
         self.assets = self._get_portfolio()
+        logger.info(f"Portfolio initialized, assets count: {len(self.assets)}")
 
     def _get_accounts(self) -> list[dict]:
-        return [
-            {"id": acc.id, "name": acc.name, "status": acc.status}
-            for acc in self.client.users.get_accounts().accounts
-            if acc.status != AccountStatus(3)
-        ]
+        try:
+            logger.info("Getting accounts list")
+            accounts = self.client.users.get_accounts().accounts
+            active_accounts = [
+                {"id": acc.id, "name": acc.name, "status": acc.status}
+                for acc in accounts
+                if acc.status != AccountStatus(3)
+            ]
+            logger.info(f"Active accounts found: {len(active_accounts)}")
+            return active_accounts
+        except RequestError as er:
+            logger.error("Error getting accounts list")
+            logger.error(f"Error code: {er.code}")
+            logger.error(f"Error details: {er.details}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error getting accounts: {e}")
+            raise
 
     def _get_portfolio(self) -> list[Asset]:
         accounts = self._get_accounts()
         assets = []
+        total_positions = 0
 
         for acc in accounts:
             try:
+                logger.info(
+                    f"Getting portfolio for account: {acc['name']} ({acc['id']})"
+                )
                 positions = self.client.operations.get_portfolio(
                     account_id=acc["id"]
                 ).positions
-            except RequestError as er:
-                print("\nGet Portfolio Request error")
-                print("code:\n", er.code)
-                print("details:\n", er.details)
-                print("metadata:\n", er.metadata)
-                print()
-            else:
+
+                logger.info(
+                    f"Positions found in account {acc['name']}: {len(positions)}"
+                )
+                total_positions += len(positions)
+
                 for position in positions:
                     assets.append(
                         Asset(
@@ -97,6 +122,15 @@ class Portfolio:
                             client=self.client,
                         )
                     )
+
+            except RequestError as er:
+                logger.error(f"Error getting portfolio for account {acc['name']}")
+                logger.error(f"Error code: {er.code}")
+                logger.error(f"Error details: {er.details}")
+            except Exception as e:
+                logger.error(f"Unexpected error processing account {acc['name']}: {e}")
+
+        logger.info(f"Total positions processed: {total_positions}")
         return assets
 
     def __repr__(self):
