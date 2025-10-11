@@ -1,5 +1,3 @@
-import logging
-import sys
 from gspread import Worksheet
 from tcs import Portfolio
 from logger_setup import logger

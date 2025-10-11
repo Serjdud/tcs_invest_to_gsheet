@@ -1,5 +1,3 @@
-import logging
-import sys
 from tinkoff.invest import AccountStatus, InstrumentIdType, RequestError
 from tinkoff.invest.services import Services
 from logger_setup import logger

@@ -1,7 +1,5 @@
-import os
 import gspread
 import json
-import logging
 import sys
 from tcs import Portfolio
 from tinkoff.invest import Client
