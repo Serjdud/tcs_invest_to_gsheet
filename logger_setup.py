@@ -4,7 +4,7 @@ import logging.handlers
 
 def setup_logging():
     """Setup logging to syslog and terminal"""
-    logger = logging.getLogger('portfolio_tracker')
+    logger = logging.getLogger('tcs_invest_tracker')
     
     if logger.handlers:
         return logger
