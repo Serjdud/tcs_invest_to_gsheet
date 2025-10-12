@@ -29,8 +29,65 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Other
+1. Make run.sh executable
+```bash
+sudo chmod +x run.sh
+```
+
 # Usage
 Run
 ```bash
-python3 main.py
+./run.sh
+```
+
+# Scheduled auto-update
+## Linux
+(one of the options)
+1. Make file /etc/systemd/system/portfolio-tracker.service
+```ini
+[Unit]
+Description=Portfolio Tracker Update
+After=network.target
+
+[Service]
+Type=oneshot
+User=orangepi
+Group=orangepi
+WorkingDirectory=<PATH_TO_PROJECT>/tcs_invest_to_gsheet
+ExecStart=/bin/bash <PATH_TO_PROJECT>/tcs_invest_to_gsheet/run.sh
+Environment=PYTHONPATH=<PATH_TO_PROJECT>/tcs_invest_to_gsheet
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+```
+`<PATH_TO_PROJECT>` - path to `tcs_invest_to_gsheet` folder
+2. Make file /etc/systemd/system/portfolio-tracker.timer
+```ini
+[Unit]
+Description=Run Portfolio Tracker at 9:00 and 18:00 MSK
+Requires=portfolio-tracker.service
+
+[Timer]
+# UTC time
+OnCalendar=*-*-* 06:00:00
+OnCalendar=*-*-* 15:00:00
+
+# Settings
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+```
+3. Enable and start `portfolio-tracker.timer` timer
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable portfolio-tracker.timer
+sudo systemctl start portfolio-tracker.timer
 ```
