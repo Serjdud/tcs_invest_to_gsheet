@@ -67,6 +67,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ```
 `<PATH_TO_PROJECT>` - path to `tcs_invest_to_gsheet` folder
+
 2. Make file /etc/systemd/system/portfolio-tracker.timer
 ```ini
 [Unit]
