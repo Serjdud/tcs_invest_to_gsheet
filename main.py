@@ -2,7 +2,7 @@ import gspread
 import json
 import sys
 from tcs import Portfolio
-from tinkoff.invest import Client
+from t_tech.invest import Client
 from gsheets import update_portfolio_ws
 from logger_setup import logger
 

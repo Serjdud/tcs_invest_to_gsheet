@@ -1,5 +1,5 @@
-from tinkoff.invest import AccountStatus, InstrumentIdType, RequestError
-from tinkoff.invest.services import Services
+from t_tech.invest import AccountStatus, InstrumentIdType, RequestError
+from t_tech.invest.services import Services
 from logger_setup import logger
 
 NANO = 10 ** (-9)
