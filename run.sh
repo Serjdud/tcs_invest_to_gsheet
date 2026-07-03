@@ -59,7 +59,7 @@ install_requirements() {
     if [ -f "$REQUIREMENTS_FILE" ]; then
         log_info "Found $REQUIREMENTS_FILE, checking dependencies..."
         source "$VENV_DIR/bin/activate"
-        
+
         if pip install -r "$REQUIREMENTS_FILE" --quiet; then
             log_success "Dependencies installed"
         else
@@ -78,6 +78,9 @@ run_script() {
     log_info "Running $PYTHON_SCRIPT under virtual environment"
     
     source "$VENV_DIR/bin/activate"
+
+    # Use MinCifri certificate
+    export SSL_TBANK_VERIFY=True
     
     PYTHON_VERSION=$(python --version 2>&1)
     log_info "Using: $PYTHON_VERSION"

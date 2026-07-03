@@ -28,6 +28,7 @@ source .venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+4. If `t-tech-investments` installing error, read [T-Bank Python SDK FAQ](https://developer.tbank.ru/invest/sdk/python_sdk/faq_python)
 
 ### Other
 1. Make run.sh executable
